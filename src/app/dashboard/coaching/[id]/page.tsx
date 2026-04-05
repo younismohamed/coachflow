@@ -30,11 +30,20 @@ export default async function CoachingDetailPage({ params }: { params: { id: str
 
   if (!record) notFound();
 
-  const canEdit = profile?.role === 'admin' || (profile?.role === 'manager' && (record as any).coach?.id === user.id);
+  const canEdit = (profile as any)?.role === 'admin' || ((profile as any)?.role === 'manager' && (record as any).coach?.id === user.id);
+  
+  // Check if current user is the employee of this record
+  const { data: employeeRecord } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('profile_id', user.id)
+    .single();
+
+  const isEmployee = employeeRecord?.id === (record as any).employee?.id;
+  const canAcknowledge = isEmployee && (record as any).status === 'pending';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <Link href="/dashboard/coaching" className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1 mb-2">
@@ -61,7 +70,6 @@ export default async function CoachingDetailPage({ params }: { params: { id: str
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Employee */}
         <div className="card p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Employee</p>
           <div className="flex items-center gap-3">
@@ -73,14 +81,10 @@ export default async function CoachingDetailPage({ params }: { params: { id: str
             <div>
               <p className="font-medium text-gray-900">{(record as any).employee?.name}</p>
               <p className="text-sm text-gray-500">{(record as any).employee?.email}</p>
-              {(record as any).employee?.department && (
-                <p className="text-xs text-gray-400">{(record as any).employee?.department}</p>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Coach */}
         <div className="card p-5">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Coach / Manager</p>
           <div className="flex items-center gap-3">
@@ -97,13 +101,11 @@ export default async function CoachingDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
-      {/* Notes */}
       <div className="card p-6">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Session Notes</p>
         <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{(record as any).notes}</p>
       </div>
 
-      {/* Action Plan */}
       {(record as any).action_plan && (
         <div className="card p-6 border-brand-100 border">
           <p className="text-xs font-semibold text-brand-600 uppercase tracking-wide mb-3">Action Plan</p>
@@ -111,7 +113,25 @@ export default async function CoachingDetailPage({ params }: { params: { id: str
         </div>
       )}
 
-      {/* Acknowledgment status */}
+      {/* Acknowledge button for employee */}
+      {canAcknowledge && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📋</span>
+            <div>
+              <p className="font-medium text-amber-800">Action required</p>
+              <p className="text-sm text-amber-600">Please acknowledge that you have read this coaching record.</p>
+            </div>
+          </div>
+          <Link
+            href={`/acknowledge/${(record as any).acknowledgment_token}`}
+            className="btn-primary shrink-0"
+          >
+            Acknowledge
+          </Link>
+        </div>
+      )}
+
       {(record as any).status === 'acknowledged' && (record as any).acknowledged_at && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-5 flex items-center gap-3">
           <span className="text-2xl">✅</span>
