@@ -17,11 +17,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!profile) redirect('/login');
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-50">
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
       <Sidebar role={profile.role} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
         <TopBar profile={profile} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '28px 32px',
+        }}>
+          {children}
+        </main>
       </div>
     </div>
   );
