@@ -6,8 +6,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || (profile as any).role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const body = await request.json();
   const { role } = body;
@@ -16,7 +23,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   }
 
-  // Use service client to bypass RLS restriction on role changes
   const serviceClient = createServiceClient();
   const { data, error } = await serviceClient
     .from('profiles')
