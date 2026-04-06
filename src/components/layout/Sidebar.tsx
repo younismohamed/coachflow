@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import type { UserRole } from '@/lib/supabase/types';
 
 interface SidebarProps {
   role: UserRole;
 }
 
-const navItems = [
+const allNavItems = [
   {
     href: '/dashboard',
     label: 'Dashboard',
@@ -70,36 +71,39 @@ const roleConfig = {
 
 export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
-  const filtered = navItems.filter((item) => item.roles.includes(role));
-  const rc = roleConfig[role];
+  const [viewAs, setViewAs] = useState<UserRole>(role);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('viewAs') as UserRole | null;
+    if (saved && ['admin', 'manager', 'employee'].includes(saved)) {
+      setViewAs(saved);
+    } else {
+      setViewAs(role);
+    }
+  }, [role]);
+
+  const effectiveRole = viewAs;
+  const filtered = allNavItems.filter((item) => item.roles.includes(effectiveRole));
+  const rc = roleConfig[effectiveRole] || roleConfig.employee;
 
   return (
     <aside style={{
-      width: '240px',
-      flexShrink: 0,
+      width: '240px', flexShrink: 0,
       background: 'var(--sidebar-bg)',
-      display: 'flex',
-      flexDirection: 'column',
+      display: 'flex', flexDirection: 'column',
       height: '100vh',
       borderRight: '1px solid rgba(255,255,255,0.06)',
     }}>
       {/* Logo */}
       <div style={{
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '0 20px',
+        height: '64px', display: 'flex', alignItems: 'center',
+        gap: '10px', padding: '0 20px',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
+          width: '32px', height: '32px', borderRadius: '8px',
           background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 0 12px rgba(37,99,235,0.4)',
         }}>
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
@@ -121,21 +125,15 @@ export default function Sidebar({ role }: SidebarProps) {
           const isActive = item.href === '/dashboard'
             ? pathname === '/dashboard'
             : pathname.startsWith(item.href);
-
           return (
             <Link key={item.href} href={item.href} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '9px 12px',
-              borderRadius: '8px',
-              fontSize: '13.5px',
-              fontWeight: isActive ? 600 : 400,
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '9px 12px', borderRadius: '8px',
+              fontSize: '13.5px', fontWeight: isActive ? 600 : 400,
               color: isActive ? '#f1f5f9' : '#64748b',
               background: isActive ? 'rgba(37,99,235,0.15)' : 'transparent',
               borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
-              transition: 'all 0.15s',
-              textDecoration: 'none',
+              transition: 'all 0.15s', textDecoration: 'none',
             }}>
               <span style={{ color: isActive ? '#3b82f6' : '#475569', flexShrink: 0 }}>
                 {item.icon}
@@ -146,38 +144,27 @@ export default function Sidebar({ role }: SidebarProps) {
         })}
       </nav>
 
-      {/* Role badge + sign out */}
+      {/* Role badge */}
       <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          background: rc.bg,
-          marginBottom: '8px',
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px', borderRadius: '8px',
+          background: rc.bg, marginBottom: '8px',
         }}>
           <div style={{
             width: '7px', height: '7px', borderRadius: '50%',
-            background: rc.color,
-            boxShadow: `0 0 6px ${rc.color}`,
+            background: rc.color, boxShadow: `0 0 6px ${rc.color}`,
           }} />
-          <span style={{ fontSize: '12px', fontWeight: 500, color: rc.color }}>{rc.label}</span>
+          <span style={{ fontSize: '12px', fontWeight: 500, color: rc.color }}>
+            {viewAs !== role ? `Viewing as ${rc.label}` : rc.label}
+          </span>
         </div>
         <form action="/auth/signout" method="POST">
           <button type="submit" style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            background: 'transparent',
-            border: 'none',
-            color: '#475569',
-            fontSize: '13px',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
+            width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 12px', borderRadius: '8px',
+            background: 'transparent', border: 'none',
+            color: '#475569', fontSize: '13px', cursor: 'pointer',
           }}>
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
